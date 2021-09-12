@@ -1,5 +1,4 @@
-# blockchain-developer-bootcamp-final-project
-ConsensysAcademy 2021
+# ConsensysAcademy 2021 - Final Project
 
 
 # Idea : 
