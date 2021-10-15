@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.4.22 <0.9.0;
+pragma solidity =0.7.6;
 pragma abicoder v2;
 
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
@@ -20,17 +20,16 @@ contract DCAWallet {
   // Ropsten addresses
   address[] public token_addresses = [0x68ec573C119826db2eaEA1Efbfc2970cDaC869c4,  //USDC
                                 0xc778417E063141139Fce010982780140Aa0cD5Ab,  //WETH
-                                0xc3778758d19a654fa6d0bb3593cf26916fb3d114];  //WBTC
+                                0xc3778758D19A654fA6d0bb3593Cf26916fB3d114];  //WBTC
 
 
-  mapping(address => mapping(uint => uint)) tokenBalances; //owner address => tokenType enum => tokenbalance
-  mapping(address => uint[]) portfolioAllocation;  // investment strategy for each owner
-  mapping(address => uint) userTimelock;   //timelock where user can't withdraw tokens 
+  mapping(address => mapping(uint => uint)) public tokenBalances; //owner address => tokenType enum => tokenbalance
+  mapping(address => uint[]) public portfolioAllocation;  // investment strategy for each owner
+  mapping(address => uint) public userTimelock;   //timelock where user can't withdraw tokens 
 
 
-  ISwapRouter public immutable swapRouter;
-
-  
+  ISwapRouter public immutable swapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+  address swapRouter_address = 0xE592427A0AEce92De3Edee1F18E0157C05861564;    
 
 
   uint24 public constant poolFee = 3000;
@@ -39,8 +38,8 @@ contract DCAWallet {
   ErcToken public wethToken;
   ErcToken public wbtcToken;
 
-  constructor(ISwapRouter _swapRouter) public {
-    swapRouter = _swapRouter; 
+  constructor() {
+     
     usdcToken = ErcToken(token_addresses[0]);  
     wethToken = ErcToken(token_addresses[1]);  
     wbtcToken = ErcToken(token_addresses[2]);  
@@ -65,10 +64,19 @@ contract DCAWallet {
 
   }
 
-  
-
   //Handle deposits of USDC
   function usdcDeposited(uint _amount) public {
+    require(_amount > 0, "amount should be greater than 0");
+
+    // Need owner to approve token transfer via javascript UI first
+    usdcToken.transferFrom(msg.sender, address(this), _amount);
+
+    tokenBalances[msg.sender][uint(TokenType.USDC)] += _amount;
+
+  }
+
+  //Handle deposits of USDC
+  function usdcDepositedAndExecute(uint _amount) public {
     require(_amount > 0, "amount should be greater than 0");
 
     // Need owner to approve token transfer via javascript UI first
@@ -79,10 +87,10 @@ contract DCAWallet {
     executePortfolioBuys(_amount);
   }
 
-  function executePortfolioBuys(uint _amount) internal {
+  function executePortfolioBuys(uint _amount) public {
     uint i;
     
-    for(i = 1; i<_portfolio_allocation.length; i++ ){
+    for(i = 1; i<portfolioAllocation[msg.sender].length; i++ ){
       swapExactInputSingle( portfolioAllocation[msg.sender][i] * _amount / 100, i);
     }
 
@@ -90,23 +98,23 @@ contract DCAWallet {
 
   }
 
-  function swapExactInputSingle(uint256 amountIn, uint token_index) internal returns (uint256 amountOut) {
+  function swapExactInputSingle(uint256 amountIn, uint token_index) public returns (uint256 amountOut) {
         // msg.sender must approve this contract
 
         //Deduct USDC balance from sender
         tokenBalances[msg.sender][uint(TokenType.USDC)] -= amountIn;
 
         // Approve the router to spend USDC.
-        TransferHelper.safeApprove(USDC_address, address(swapRouter), amountIn);
+        TransferHelper.safeApprove(token_addresses[0], swapRouter_address, amountIn);
 
         // Naively set amountOutMinimum to 0. In production, use an oracle or other data source to choose a safer value for amountOutMinimum.
         // We also set the sqrtPriceLimitx96 to be 0 to ensure we swap our exact input amount.
         ISwapRouter.ExactInputSingleParams memory params =
             ISwapRouter.ExactInputSingleParams({
-                tokenIn: USDC_address,
+                tokenIn: token_addresses[0],
                 tokenOut: token_addresses[token_index],
                 fee: poolFee,
-                recipient: this(address),
+                recipient: address(this),
                 deadline: block.timestamp,
                 amountIn: amountIn,
                 amountOutMinimum: 0,
@@ -128,7 +136,7 @@ contract DCAWallet {
 
   //Withdraw/spend tokens from maturing vault
   function withdrawTokens(uint amount, uint token_index) public {
-    require(now >= userTimelock[msg.sender]);
+    require(block.timestamp >= userTimelock[msg.sender]);
     require(tokenBalances[msg.sender][token_index] >= amount);
 
     tokenBalances[msg.sender][token_index] -= amount;
