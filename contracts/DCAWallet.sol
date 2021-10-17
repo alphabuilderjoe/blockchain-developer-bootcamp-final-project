@@ -4,7 +4,11 @@ pragma abicoder v2;
 
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
+import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 
+interface IUniswapRouter is ISwapRouter {
+    function refundETH() external payable;
+}
 
 interface ErcToken {
       function transfer(address dst, uint wad) external returns (bool);
@@ -14,38 +18,34 @@ interface ErcToken {
 
 
 contract DCAWallet {
+
+  // Kovan addresses
+  IUniswapRouter internal constant uniswapRouter = IUniswapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+  IQuoter internal constant quoter = IQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6);
+  address[] internal token_addresses = [0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa,  //DAI
+                                0xd0A1E359811322d97991E03f863a0C30C2cF029C,  //WETH
+                                0xa36085F69e2889c224210F603D836748e7dC0088];  //LINK
+
   
-  enum TokenType{ USDC, WETH, WBTC}
-
-  // Ropsten addresses
-  address[] public token_addresses = [0x68ec573C119826db2eaEA1Efbfc2970cDaC869c4,  //USDC
-                                0xc778417E063141139Fce010982780140Aa0cD5Ab,  //WETH
-                                0xc3778758D19A654fA6d0bb3593Cf26916fB3d114];  //WBTC
-
 
   mapping(address => mapping(uint => uint)) public tokenBalances; //owner address => tokenType enum => tokenbalance
   mapping(address => uint[]) public portfolioAllocation;  // investment strategy for each owner
   mapping(address => uint) public userTimelock;   //timelock where user can't withdraw tokens 
 
-
-  ISwapRouter public immutable swapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
-  address swapRouter_address = 0xE592427A0AEce92De3Edee1F18E0157C05861564;    
-
-
-  uint24 public constant poolFee = 3000;
+  uint24 internal constant poolFee = 3000;
   
-  ErcToken public usdcToken;
-  ErcToken public wethToken;
-  ErcToken public wbtcToken;
+  enum TokenType{ DAI, WETH, LINK}
+
+  ErcToken internal daiToken;
+  ErcToken internal wethToken;
+  ErcToken internal linkToken;
 
   constructor() {
      
-    usdcToken = ErcToken(token_addresses[0]);  
+    daiToken = ErcToken(token_addresses[0]);  
     wethToken = ErcToken(token_addresses[1]);  
-    wbtcToken = ErcToken(token_addresses[2]);  
+    linkToken = ErcToken(token_addresses[2]);  
   }
-
-
 
   //User sets up/modifies portfolio allocation
   function createPortfolioAllocation(uint[] memory _portfolio_allocation) public{
@@ -64,25 +64,25 @@ contract DCAWallet {
 
   }
 
-  //Handle deposits of USDC
-  function usdcDeposited(uint _amount) public {
+  //Handle deposits of dai
+  function daiDeposited(uint _amount) public {
     require(_amount > 0, "amount should be greater than 0");
 
     // Need owner to approve token transfer via javascript UI first
-    usdcToken.transferFrom(msg.sender, address(this), _amount);
+    daiToken.transferFrom(msg.sender, address(this), _amount);
 
-    tokenBalances[msg.sender][uint(TokenType.USDC)] += _amount;
+    tokenBalances[msg.sender][uint(TokenType.DAI)] += _amount;
 
   }
 
-  //Handle deposits of USDC
-  function usdcDepositedAndExecute(uint _amount) public {
+  //Handle deposits of dai
+  function daiDepositedAndExecute(uint _amount) public {
     require(_amount > 0, "amount should be greater than 0");
 
     // Need owner to approve token transfer via javascript UI first
-    usdcToken.transferFrom(msg.sender, address(this), _amount);
+    daiToken.transferFrom(msg.sender, address(this), _amount);
 
-    tokenBalances[msg.sender][uint(TokenType.USDC)] += _amount;
+    tokenBalances[msg.sender][uint(TokenType.DAI)] += _amount;
 
     executePortfolioBuys(_amount);
   }
@@ -98,39 +98,61 @@ contract DCAWallet {
 
   }
 
-  function swapExactInputSingle(uint256 amountIn, uint token_index) public returns (uint256 amountOut) {
+  function swapExactInputSingle(uint256 _amountIn, uint token_index) public returns (uint256 amountOut) {
         // msg.sender must approve this contract
 
-        //Deduct USDC balance from sender
-        tokenBalances[msg.sender][uint(TokenType.USDC)] -= amountIn;
+        //Deduct dai balance from sender
+        tokenBalances[msg.sender][uint(TokenType.DAI)] -= _amountIn;
 
-        // Approve the router to spend USDC.
-        TransferHelper.safeApprove(token_addresses[0], swapRouter_address, amountIn);
 
-        // Naively set amountOutMinimum to 0. In production, use an oracle or other data source to choose a safer value for amountOutMinimum.
-        // We also set the sqrtPriceLimitx96 to be 0 to ensure we swap our exact input amount.
-        ISwapRouter.ExactInputSingleParams memory params =
-            ISwapRouter.ExactInputSingleParams({
-                tokenIn: token_addresses[0],
-                tokenOut: token_addresses[token_index],
-                fee: poolFee,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: amountIn,
-                amountOutMinimum: 0,
-                sqrtPriceLimitX96: 0
-            });
+        // Approve the router to spend DAI.
+        TransferHelper.safeApprove(token_addresses[0], address(uniswapRouter), _amountIn);
 
-        // The call to `exactInputSingle` executes the swap.
-        amountOut = swapRouter.exactInputSingle(params);
+        uint256 deadline = block.timestamp + 15; // using 'now' for convenience, for mainnet pass deadline from frontend!
+        address tokenIn = token_addresses[0];
+        address tokenOut = token_addresses[token_index];
+        uint24 fee = 3000;
+        address recipient = address(this);
+        uint256 amountIn = _amountIn;
+        uint256 amountOutMinimum = 0;
+        uint160 sqrtPriceLimitX96 = 0;
+        
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams(
+            tokenIn,
+            tokenOut,
+            fee,
+            recipient,
+            deadline,
+            amountIn,
+            amountOutMinimum,
+            sqrtPriceLimitX96
+        );
+        
+        amountOut = uniswapRouter.exactInputSingle(params);
+        uniswapRouter.refundETH();
+        
+        // refund leftover ETH to user
+        (bool success,) = msg.sender.call{ value: address(this).balance }("");
+        require(success, "refund failed");
 
         //Add swapped token to senders balance
         tokenBalances[msg.sender][token_index] += amountOut;
     }
 
   // User can set timelock to prevent any withdrawals/forced to hodl
-  function setTimelock(uint _unlockDate) public {
-      userTimelock[msg.sender] = _unlockDate;
+  function setTimelockByDate(uint _unlockDate) public {
+    require(_unlockDate > userTimelock[msg.sender] );
+    userTimelock[msg.sender] = _unlockDate;
+  }
+
+  function setTimelockByHours(uint _hoursToLock) public {
+    require(block.timestamp + _hoursToLock * 1 hours > userTimelock[msg.sender] );
+    userTimelock[msg.sender] = block.timestamp + _hoursToLock * 1 hours;
+  }
+
+  function setTimelockByDays(uint _daysToLock) public {
+    require(block.timestamp + _daysToLock * 1 days > userTimelock[msg.sender] );
+    userTimelock[msg.sender] = block.timestamp + _daysToLock * 1 days;
   }
 
 
@@ -142,6 +164,41 @@ contract DCAWallet {
     tokenBalances[msg.sender][token_index] -= amount;
     ErcToken withdrawal_token = ErcToken(token_addresses[token_index]);
     withdrawal_token.transfer(msg.sender, amount);
+  }
+
+
+  //convenience function to swap eth to dai for test cases
+  function convertExactEthToDai() external payable {
+    require(msg.value > 0, "Must pass non 0 ETH amount");
+
+    uint256 deadline = block.timestamp + 15; // using 'now' for convenience, for mainnet pass deadline from frontend!
+    address tokenIn = token_addresses[1];
+    address tokenOut = token_addresses[0];
+    uint24 fee = 3000;
+    address recipient = address(this);
+    uint256 amountIn = msg.value;
+    uint256 amountOutMinimum = 0;
+    uint160 sqrtPriceLimitX96 = 0;
+    
+    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams(
+        tokenIn,
+        tokenOut,
+        fee,
+        recipient,
+        deadline,
+        amountIn,
+        amountOutMinimum,
+        sqrtPriceLimitX96
+    );
+    
+    uint amountOut = uniswapRouter.exactInputSingle{ value: msg.value }(params);
+    uniswapRouter.refundETH();
+    
+    // refund leftover ETH to user
+    (bool success,) = msg.sender.call{ value: address(this).balance }("");
+    require(success, "refund failed");
+
+    tokenBalances[msg.sender][uint(TokenType.DAI)] += amountOut;
   }
 
 
