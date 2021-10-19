@@ -175,7 +175,7 @@ contract DCAWallet {
     address tokenIn = token_addresses[1];
     address tokenOut = token_addresses[0];
     uint24 fee = 3000;
-    address recipient = address(this);
+    address recipient = msg.sender;
     uint256 amountIn = msg.value;
     uint256 amountOutMinimum = 0;
     uint160 sqrtPriceLimitX96 = 0;
@@ -197,8 +197,19 @@ contract DCAWallet {
     // refund leftover ETH to user
     (bool success,) = msg.sender.call{ value: address(this).balance }("");
     require(success, "refund failed");
+  }
 
-    tokenBalances[msg.sender][uint(TokenType.DAI)] += amountOut;
+  //getters for mapping
+  function getTokenBalances(address user, uint token_index) public view returns (uint256) {
+    return tokenBalances[user][token_index];
+  }
+
+  function getPortfolioAllocation(address user) public view returns (uint256[] memory) {
+    return portfolioAllocation[user];
+  }
+
+  function getUserTimelock(address user) public view returns (uint256) {
+    return userTimelock[user];
   }
 
 
