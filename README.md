@@ -14,7 +14,7 @@ User-friendly monthly dollar-cost averaging wallet + optional user-defined timel
 build - ABI files for final build
 contracts - Solidity code for main contract "DCAWallet.sol"
 migrations - Migration and deployment instructions
-test - Contains tests for DCAWallet. (Note : Tests should be run with 'truffle test --network kovan')
+test - Contains tests for DCAWallet. (Note : Tests should be run with )
 joepro123.github.io - Contains html and javascript code behind front-end UI
 
 # Deployed front-end:
@@ -22,6 +22,20 @@ https://joepro123.github.io/
 
 # Deployed contract on Kovan testnet
 0x48d02e28a6C4b138599F4f5734940c70a672B454
+
+
+# Installing dependencies
+npm i @uniswap/v3-periphery
+npm i truffle-plugin-verify  (used to verify smart contract ABI on Etherscan)
+
+# Deploying smart contract on Kovan
+1. 'truffle migrate --network kovan'
+2. 'truffle run verify DCAWallet --network kovan'
+
+
+# Running truffle tests
+1.'truffle test --network kovan'
+
 
 # Ethereum address to receive NFT certification
 0xB28397E0e9a9CD849A30AF694f46765310274aF5
