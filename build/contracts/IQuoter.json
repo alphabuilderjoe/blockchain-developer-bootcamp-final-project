@@ -1524,7 +1524,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.3",
-  "updatedAt": "2021-10-19T01:57:02.718Z",
+  "updatedAt": "2021-11-04T07:38:25.168Z",
   "devdoc": {
     "details": "These functions are not marked view because they rely on calling non-view functions and reverting to compute the result. They are also not gas efficient and should not be called on-chain.",
     "kind": "dev",

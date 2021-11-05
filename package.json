@@ -23,5 +23,9 @@
         "truffle-contract": "3.0.6",
         "truffle-flattener": "^1.5.0",
         "truffle-plugin-verify": "^0.5.15"
+    },
+    "dependencies": {
+        "@openzeppelin/test-helpers": "^0.5.15",
+        "truffle-token-test-utils": "^1.0.0"
     }
 }

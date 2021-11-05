@@ -6,17 +6,21 @@ import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 
+
+/// @title Interface inheriting from uniswap swap router, and adding refundETH function.
 interface IUniswapRouter is ISwapRouter {
     function refundETH() external payable;
 }
 
+/// @title Interface representing ERC20 tokens
 interface ErcToken {
       function transfer(address dst, uint wad) external returns (bool);
       function transferFrom(address src, address dst, uint wad) external returns (bool);
       function balanceOf(address guy) external view returns (uint);
 }
 
-
+/// @title DCAWallet main code
+/// @author Ng Joe Hoong
 contract DCAWallet {
 
   // Kovan addresses
@@ -28,9 +32,9 @@ contract DCAWallet {
 
   
 
-  mapping(address => mapping(uint => uint)) public tokenBalances; //owner address => tokenType enum => tokenbalance
-  mapping(address => uint[]) public portfolioAllocation;  // investment strategy for each owner
-  mapping(address => uint) public userTimelock;   //timelock where user can't withdraw tokens 
+  mapping(address => mapping(uint => uint)) internal tokenBalances; //owner address => tokenType enum => tokenbalance
+  mapping(address => uint[]) internal portfolioAllocation;  // investment strategy for each owner
+  mapping(address => uint) internal userTimelock;   //timelock where user can't withdraw tokens 
 
   uint24 internal constant poolFee = 3000;
   
@@ -41,13 +45,12 @@ contract DCAWallet {
   ErcToken internal linkToken;
 
   constructor() {
-     
     daiToken = ErcToken(token_addresses[0]);  
     wethToken = ErcToken(token_addresses[1]);  
     linkToken = ErcToken(token_addresses[2]);  
   }
 
-  //User sets up/modifies portfolio allocation
+  /// User sets up/modifies portfolio allocation
   function createPortfolioAllocation(uint[] memory _portfolio_allocation) public{
     require(_portfolio_allocation.length == 3); // number of tokens under TokenType enum
 
@@ -64,7 +67,7 @@ contract DCAWallet {
 
   }
 
-  //Handle deposits of dai
+  /// Handle deposits of dai and no execution
   function daiDeposited(uint _amount) public {
     require(_amount > 0, "amount should be greater than 0");
 
@@ -75,7 +78,7 @@ contract DCAWallet {
 
   }
 
-  //Handle deposits of dai
+  /// Handle deposits of dai and execute trades
   function daiDepositedAndExecute(uint _amount) public {
     require(_amount > 0, "amount should be greater than 0");
 
@@ -87,6 +90,7 @@ contract DCAWallet {
     executePortfolioBuys(_amount);
   }
 
+  /// Execute portfolio buys after dai is deposited, according to user's portfolio allocation
   function executePortfolioBuys(uint _amount) public {
     uint i;
     
@@ -98,6 +102,7 @@ contract DCAWallet {
 
   }
 
+  /// Use uniswap pools to swap and exact amount of input tokens for output tokens
   function swapExactInputSingle(uint256 _amountIn, uint token_index) public returns (uint256 amountOut) {
         // msg.sender must approve this contract
 
@@ -139,24 +144,26 @@ contract DCAWallet {
         tokenBalances[msg.sender][token_index] += amountOut;
     }
 
-  // User can set timelock to prevent any withdrawals/forced to hodl
+  /// User can set timelock to prevent any withdrawals/forced to hodl
   function setTimelockByDate(uint _unlockDate) public {
     require(_unlockDate > userTimelock[msg.sender] );
     userTimelock[msg.sender] = _unlockDate;
   }
 
+  /// Users set timelock based on number of hours from current time
   function setTimelockByHours(uint _hoursToLock) public {
     require(block.timestamp + _hoursToLock * 1 hours > userTimelock[msg.sender] );
     userTimelock[msg.sender] = block.timestamp + _hoursToLock * 1 hours;
   }
 
+  /// Users set timelock based on number of days from current time
   function setTimelockByDays(uint _daysToLock) public {
     require(block.timestamp + _daysToLock * 1 days > userTimelock[msg.sender] );
     userTimelock[msg.sender] = block.timestamp + _daysToLock * 1 days;
   }
 
 
-  //Withdraw/spend tokens from maturing vault
+  // /Withdraw/spend tokens after timelock is over
   function withdrawTokens(uint amount, uint token_index) public {
     require(block.timestamp >= userTimelock[msg.sender]);
     require(tokenBalances[msg.sender][token_index] >= amount);
@@ -167,7 +174,7 @@ contract DCAWallet {
   }
 
 
-  //convenience function to swap eth to dai for test cases
+  /// Convenience function to swap eth to dai for test cases
   function convertExactEthToDai() external payable {
     require(msg.value > 0, "Must pass non 0 ETH amount");
 
@@ -199,15 +206,17 @@ contract DCAWallet {
     require(success, "refund failed");
   }
 
-  //getters for mapping
+  /// getters for user's token balances
   function getTokenBalances(address user, uint token_index) public view returns (uint256) {
     return tokenBalances[user][token_index];
   }
 
+  /// getters for portfolio allocation
   function getPortfolioAllocation(address user) public view returns (uint256[] memory) {
     return portfolioAllocation[user];
   }
 
+  /// getters for user's timelock
   function getUserTimelock(address user) public view returns (uint256) {
     return userTimelock[user];
   }

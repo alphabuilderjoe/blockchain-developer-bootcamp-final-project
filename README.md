@@ -1,14 +1,27 @@
 # ConsensysAcademy 2021 - Final Project
-
+HODL Wallet
 
 # Idea : 
-User-friendly monthly dollar-cost averaging wallet + spending limit, on an Eth L2 
+User-friendly monthly dollar-cost averaging wallet + optional user-defined timelock preventing early withdrawals/sales
 
 # Workflow:
-1. Users would set up initial wallet paramters and spending categories. E.g. users will select how much ETH, wBTC, and other tokens they would like to buy a month. Users can specify their minimum HODLing time-period for these investments.
-2. Users can also set up monthly spending categories and limits.
-3. Going forward, every month users would make a monthly deposit, and those funds will be invested/etc according to the user's initial instructions.
+1. Users would set up initial wallet portfolio allocation percentages. E.g. users will select the percentage of how much ETH, LINK, and other ERC20 tokens they would like to buy a month. 
+2. Going forward, whenever users make a deposit of Dai (likely on a weekly or monthly basis), those funds will be invested according to the user's initial portfolio allocation.
+3. At any point, the user can set a timelock on all assets held by the wallet, and this timelock cannot be removed by the user. This timelock is to encourage long-term holding of crypto assets.
 
 
-# Scope of project:
+# Directory structure:
+build - ABI files for final build
+contracts - Solidity code for main contract "DCAWallet.sol"
+migrations - Migration and deployment instructions
+test - Contains tests for DCAWallet. (Note : Tests should be run with 'truffle test --network kovan')
+joepro123.github.io - Contains html and javascript code behind front-end UI
 
+# Deployed front-end:
+https://joepro123.github.io/
+
+# Deployed contract on Kovan testnet
+0x48d02e28a6C4b138599F4f5734940c70a672B454
+
+# Ethereum address to receive NFT certification
+0xB28397E0e9a9CD849A30AF694f46765310274aF5
