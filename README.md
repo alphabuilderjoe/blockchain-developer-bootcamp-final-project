@@ -11,10 +11,15 @@ User-friendly monthly dollar-cost averaging wallet + optional user-defined timel
 
 # Directory structure:
 build - ABI files for final build
+
 contracts - Solidity code for main contract "DCAWallet.sol"
+
 migrations - Migration and deployment instructions
+
 test - Contains tests for DCAWallet. (Note : Tests should be run with )
+
 joepro123.github.io - Contains html and javascript code behind front-end UI
+
 
 # Deployed front-end:
 https://joepro123.github.io/
@@ -24,6 +29,7 @@ https://joepro123.github.io/
 
 # Installing dependencies
 npm i @uniswap/v3-periphery
+
 npm i truffle-plugin-verify  (used to verify smart contract ABI on Etherscan)
 
 # Deploying smart contract on Kovan
