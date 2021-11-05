@@ -9,7 +9,6 @@ User-friendly monthly dollar-cost averaging wallet + optional user-defined timel
 2. Going forward, whenever users make a deposit of Dai (likely on a weekly or monthly basis), those funds will be invested according to the user's initial portfolio allocation.
 3. At any point, the user can set a timelock on all assets held by the wallet, and this timelock cannot be removed by the user. This timelock is to encourage long-term holding of crypto assets.
 
-
 # Directory structure:
 build - ABI files for final build
 contracts - Solidity code for main contract "DCAWallet.sol"
@@ -23,14 +22,15 @@ https://joepro123.github.io/
 # Deployed contract on Kovan testnet
 0x48d02e28a6C4b138599F4f5734940c70a672B454
 
-
 # Installing dependencies
 npm i @uniswap/v3-periphery
 npm i truffle-plugin-verify  (used to verify smart contract ABI on Etherscan)
 
 # Deploying smart contract on Kovan
-1. 'truffle migrate --network kovan'
-2. 'truffle run verify DCAWallet --network kovan'
+1. Populate Metamask secret phrases in the .secret file, and etherscan api in .secret_etherscan.
+2. In the truffle-config.js file, update the Infura weblinks 
+3. Run 'truffle migrate --network kovan'
+4. Run 'truffle run verify DCAWallet --network kovan'
 
 
 # Running truffle tests
