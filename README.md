@@ -29,14 +29,17 @@ https://joepro123.github.io/
 
 # Installing dependencies
 npm i @uniswap/v3-periphery
-
+npm install dotenv
+npm i @truffle/hdwallet-provider
+npm i fs
 npm i truffle-plugin-verify  (used to verify smart contract ABI on Etherscan)
 
 # Deploying smart contract on Kovan
 1. Populate Metamask secret phrases in the .secret file, and etherscan api in .secret_etherscan.
-2. In the truffle-config.js file, update the Infura weblinks 
-3. Run 'truffle migrate --network kovan'
-4. Run 'truffle run verify DCAWallet --network kovan'
+2. Install all dependencies listed above
+3. In the truffle-config.js file, update the Infura weblinks 
+4. Delete all files in the build>contracts folder, then run 'truffle migrate --network kovan'  
+5. Run 'truffle run verify DCAWallet --network kovan'
 
 
 # Running truffle tests
