@@ -44,6 +44,7 @@ npm i truffle-plugin-verify  (used to verify smart contract ABI on Etherscan)
 
 # Screencast recording links
 Part 1 - https://www.loom.com/share/5e39a077e4c34b679fcbe83321b4fd4b
+
 Part 2 - https://www.loom.com/share/23f8629b8ac042d5879572d0950300b8 
 
 # Ethereum address to receive NFT certification
