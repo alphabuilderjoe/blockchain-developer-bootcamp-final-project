@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HODL Wallet</title>
+    <style>
+      h1 {text-align:center;}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+</head>
+<body>
+  <div><h1>HODL Wallet </h1>
+  <h2>Automated crypto portfolio investing with timelocks &#128142; &#128400; &#128640;</h2>
+  </div>
+  <div>Automate your weekly or monthly crypto purchases! Set up your desired portfolio allocations (i.e. percentage of Ether and other ERC20 tokens to purchase). Then, whenever you invest some Dai (ideally on at a fixed weekly or monthly interval), HODL Wallet will automatically purchase ether and other ERC20 tokens according to your portfolio allocation. To enforce long-term holding, you can set a timelock where no withdrawals/selling is permitted. Timelocks can only be extended further, and cannot be brought forward.  </div>
+  <br>
+  <div>HODL Wallet is only available on the Kovan testnet now, and supports DAI, WETH and LINK tokens. If you need Kovan test ether or test dai, obtain them from the links/tools at the bottom</div>
+    <div id="mm-detected"></div>
+
+    
+    <!-- Connect to MetaMask Wallet -->
+    <button id="mm-connect">Connect to MetaMask</button>
+    <button id="btn-refresh-balances">Refresh Wallet Status</button>
+
+    <!-- Display current address -->
+    <div id="mm-current-account"></div>
+    
+    <!-- Display current holdings -->    
+    <br>
+    
+    <div id="display-balances"></div>
+
+
+
+    <!-- user sets portfolio allocation -->
+    <br>
+    <br>
+    <br>
+    <div><b>Set up Portfolio Allocation (Total 100%): </b></div>
+    <table>
+      <tr>
+        <th><label for="dai-allocation">DAI%</label></th>
+        <th><input id="dai-allocation" type="number" value=""/></th>
+      </tr>
+      <tr>
+        <th><label for="weth-allocation">WETH%</label></th>
+          <th><input id="weth-allocation" type="number" value=""/></th>
+  </tr>
+  <tr>
+    <th><label for="link-allocation">LINK%</label></th>
+    <th><input id="link-allocation" type="number" value=""/></th>
+  </tr>
+    </table>
+    <button id="dca-create-allocation-button">Submit Portfolio Allocation</button>
+    
+
+    <!-- user invests dai and its executed -->
+    <br>
+    <br>
+    <br>
+    <div><b>Approve Dai Spend and then Invest</b></div>
+    <div>
+        <label for="dca-invest-dai">Amount of Dai to send: </label>
+      <input id="dca-invest-dai" type="number" value="100"/>  
+      
+    </div>
+        <button id="btn-dai-approve">Approve Wallet to spend Dai</button>
+      <button id="dca-invest-dai-button">Send Dai and Execute Buys</button>
+      <div id="dca-dai-approved"></div>
+
+    <!-- user sets timelock by days-->
+    <br>
+    <br>
+    <br>
+    <div><b>Lock Wallets from Withdrawals</b></div>
+
+      <table>
+        <tr>
+        <th><label for="dca-timelock-days">Number of days:   </label></th>
+        <th><input id="dca-timelock-days" type="number" value="0"/> </th> 
+    </tr>
+<tr>
+  <th><label for="dca-timelock-hours">Number of hours: </label></th>
+    <th><input id="dca-timelock-hours" type="number" value="0"/>  </th>
+    </tr>
+    </table>
+
+      <button id="dca-timelock-button">Lock Withdrawals</button>
+
+
+    <!-- user withdraws tokens-->
+    <br>
+    <br>
+    <br>
+    <br>
+    <div><b>Withdraw Tokens</b></div>
+    <div>
+      <input type="radio" id = "dai" name="withdawal_token" value="0" checked>Dai<br> 
+      <input type="radio" id = "weth" name="withdawal_token" value="1">WETH<br> 
+      <input type="radio" id = "link" name="withdawal_token" value="2">LINK<br>  
+    </div>
+    <div>
+        <input id="dca-withdraw-amt" type="number" value="100"/>  
+    </div>
+      <button id="dca-withdrawal-token-button">Withdraw</button>
+
+
+      <br>
+    <br>
+    <br>
+    <br>
+    <div><b>Additional tools to get started:</b></div>
+    <a href="https://faucets.chain.link/kovan?_ga=2.168895329.1127442403.1634373828-2027200173.1634373828" target="_blank">Get Kovan test ether from Chainlink</a>
+    <br>
+    <br>
+    <div>
+    <label for="swap-ether">Swap some Ether for Kovan Dai:</label>
+    <input id="swap-ether" type="number" value="0.1"/>
+  </div>
+    <button id="swap-ether-button">Swap Ether for Dai</button>
+
+
+
+    <script src="app.js"></script>
+</body>
+</html>
