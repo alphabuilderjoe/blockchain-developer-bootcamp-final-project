@@ -18,7 +18,7 @@ migrations - Migration and deployment instructions
 
 test - Contains tests for DCAWallet. (Note : Tests should be run with )
 
-joepro123.github.io - Contains html and javascript code behind front-end UI
+UI - Contains html and javascript code behind front-end UI
 
 
 # Deployed front-end:
